@@ -15,7 +15,7 @@ sts = boto3.client('sts')
 dynamo_resource = boto3.resource('dynamodb')
 
 users = Users(dynamo_resource)
-account_ids = ['']
+account_ids = constants.ACCOUNT_IDS
 
 
 # listar usuarios
@@ -45,7 +45,7 @@ def list_zombie_users():
             if difference >= expected_days:
                 result.append(user)
         if isinstance(last_access, str) and (
-                datetime.now().replace(tzinfo=None) - user['CreateDate'].replace(tzinfo=None)).days > expected_days:
+                datetime.now().replace(tzinfo=None) - user['CreateDate'].replace(tzinfo=None)).days >= expected_days:
             result.append(user)
     return result
 
@@ -140,7 +140,7 @@ def delete_password_and_key(username, acct_id):
     try:
         # db.update_users([User(username, '', datetime.now().strftime(date_format), '', '', '')])
         res = users.update_user(User(acct_id, username, '', datetime.now().strftime(constants.DATE_FORMAT), '', '', ''))
-        print(res)
+        print(f"{username} inhabilitado")
     except:
         print(f"Error al actualizar usuario: {username}")
     try:
@@ -237,8 +237,9 @@ def lambda_handler(event, context):
     # event = event['detail']['mode']
     for event in list(events.keys()):
         if event in rule_name:
+            event_name = event
             event_number = events[event]
-    print(f'Event: {event} \n Event number: {event_number}', )
+    print(f'Event: {event_name} \n Event number: {event_number}', )
     global iam
     for account in account_ids:
         session = role_arn_to_session(
@@ -251,6 +252,7 @@ def lambda_handler(event, context):
         user_list = []
         users_to_delete = users.get_inactive_users()
         if event_number >= 0:
+            print("Actualizando usuarios en dynamodb...")
             for user in list_users():
                 user_list.append(User(
                     account_id,
@@ -273,8 +275,10 @@ def lambda_handler(event, context):
                     print(f"{user.username} creado!")
         if event_number == 1:
             # [staging] inhabilitar access keys y eliminar password
+            print("Desactivando usuarios...")
             [delete_password_and_key(z_user['UserName'], account_id) for z_user in list_zombie_users()]
         if event_number == 2:
+            print("Desactivando usuarios...")
             # [prod] elimina usuarios inactivos en dynamodb
             for user in users_to_delete:
                 difference = datetime.now().replace(tzinfo=None) - datetime.strptime(user['inactive_at'],
@@ -288,6 +292,7 @@ def lambda_handler(event, context):
                         print(f"Error eliminating {user['username']}")
 
     return "Lambda executed successfully..."
+
 
 # if __name__ == "__main__":
 #     # user1 = User('Test', '', '', '', '', '')
@@ -377,3 +382,5 @@ def lambda_handler(event, context):
 #             sts = session.client('sts')
 #         else:
 #             print("\nDigite una opcion valida!!! \n")
+
+

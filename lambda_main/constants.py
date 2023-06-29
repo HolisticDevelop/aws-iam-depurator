@@ -10,5 +10,6 @@ DATE_FORMAT = "%m/%d/%Y, %H:%M:%S"
 INACTIVE_DAYS = 30
 INACTIVE_DAYS_TO_DELETE = 7
 ASSUME_ROLE = "iam-list-user-role-tem"
+ACCOUNT_IDS = []
 
 # boto3.client('sts').get_caller_identity().get('Account')
