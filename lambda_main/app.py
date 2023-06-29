@@ -278,7 +278,7 @@ def lambda_handler(event, context):
             print("Desactivando usuarios...")
             [delete_password_and_key(z_user['UserName'], account_id) for z_user in list_zombie_users()]
         if event_number == 2:
-            print("Desactivando usuarios...")
+            print("Eliminando usuarios...")
             # [prod] elimina usuarios inactivos en dynamodb
             for user in users_to_delete:
                 difference = datetime.now().replace(tzinfo=None) - datetime.strptime(user['inactive_at'],

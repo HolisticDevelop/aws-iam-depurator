@@ -11,7 +11,6 @@ from aws_cdk import (
 )
 from constructs import Construct
 from lambda_main import constants
-from aws_cdk import CfnOutput
 
 
 class CdkLambdaDynamoDBStack(Stack):
@@ -19,12 +18,13 @@ class CdkLambdaDynamoDBStack(Stack):
     # lambda_function = _lambda.Function
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
-        lambda_dynamodb = LambdaToDynamoDB(self, 'iam-cleaner-function',
+        lambda_dynamodb = LambdaToDynamoDB(self, 'IAMUserCleaner',
                                            lambda_function_props=_lambda.FunctionProps(
                                                code=_lambda.Code.from_asset('lambda_main'),
                                                runtime=_lambda.Runtime.PYTHON_3_9,
                                                handler='app.lambda_handler',
                                                tracing=_lambda.Tracing.DISABLED,
+                                               timeout=Duration.seconds(30),
                                                initial_policy=[
                                                    iam.PolicyStatement(
                                                        effect=iam.Effect.ALLOW,
@@ -49,13 +49,13 @@ class CdkLambdaDynamoDBStack(Stack):
                                            )
                                            )
         resources = {
-            "list-users-rule": {"week_day": "SUN"},
+            "list-users-rule": {"week_day": "MON"},
             "deactive-users-rule": {"day": "*/15"},
-            "delete-users-rule": {"day": "1"}
+            "delete-users-rule": {"day": "28"}
         }
         for rule, cron_expression in resources.items():
             EventbridgeToLambda(self, rule,
                                 existing_lambda_obj=lambda_dynamodb.lambda_function,
                                 event_rule_props=events.RuleProps(
-                                    schedule=events.Schedule.cron(**cron_expression, minute="0", hour="6")
+                                    schedule=events.Schedule.cron(**cron_expression, minute="0", hour="10")
                                 ))
